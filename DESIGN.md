@@ -10,8 +10,30 @@
 - **模块化设计**：避免代码耦合，便于维护和扩展
 - **模型适配**：针对不同模型的特性进行优化
 - **用户友好**：提供简单易用的API接口
+- **约定大于配置**：提供编写规范，提升识别准确率
+- **Agent协作**：MCP负责结构化，Agent负责智能优化
 
 ## 2. 核心功能
+
+### 2.0 约定和规范系统
+
+为了提升识别准确率，系统基于**约定大于配置**的原则：
+
+#### 编写规范 (详见 CONVENTIONS.md)
+- 提供标准化的关键词和标记（如 `Rule:`, `Example:`, `Task:` 等）
+- 建议使用分段和空行分隔不同部分
+- 推荐的结构顺序：角色介绍 → 规则 → 上下文 → 示例 → 输出格式 → 任务
+
+#### 规则识别引擎
+- **基于模式匹配**：使用正则表达式和关键词识别
+- **优先级系统**：结构化标记（XML/Markdown）> 关键词标记 > 启发式推断
+- **容错机制**：即使未完全遵循约定，也能尽力识别
+
+#### 优势
+- ✅ 用户遵循约定 → 高准确率识别
+- ✅ 无需调用外部LLM API → 快速响应
+- ✅ 确定性输出 → 可预测的结果
+- ✅ 降低成本 → 无API调用费用
 
 ### 2.1 格式转换器 (Formatters)
 - **Markdown Formatter**: 适用于GPT系列模型
@@ -30,32 +52,81 @@
   - 适合配置型prompt
   - 易于人类阅读和编辑
 
-### 2.2 智能优化器 (Optimizer)
+### 2.2 内容分析器 (Analyzer)
+
+**职责**：分析prompt结构，返回结构化信息给Agent
+
 - **结构分析**: 自动识别prompt中的关键组成部分
-  - 指令 (Instructions)
-  - 上下文 (Context)
+  - 角色/身份介绍 (Introduction)
+  - 规则和约束 (Rules)
+  - 上下文信息 (Context)
   - 示例 (Examples)
-  - 约束条件 (Constraints)
-  - 输出要求 (Output Format)
+  - 输出格式要求 (Output Format)
+  - 主任务 (Main Task)
 
-- **内容重组**: 按照最佳实践重新组织内容
-- **冗余消除**: 去除重复或不必要的内容
-- **清晰度增强**: 使指令更加明确和具体
+- **质量评估**: 评估prompt的完整性和清晰度
+  - 缺失的section识别
+  - 歧义检测
+  - 结构问题标记
 
-### 2.3 模型适配器 (Model Adapter)
-- **Claude适配**:
-  - XML格式化
-  - 强调示例和思维链
-  - 使用`<thinking>`标签支持推理过程
+- **优化建议**: 生成改进建议返回给Agent
+  - 建议添加的内容（如缺少示例）
+  - 建议重组的部分
+  - 清晰度改进提示
 
-- **GPT适配**:
-  - Markdown格式化
-  - 优化system prompt和user prompt的分离
-  - 支持few-shot examples
+**工作流程**：
+```
+User Prompt → Analyzer → Structured Analysis
+                              ↓
+                         Return to Agent
+                              ↓
+                    Agent使用LLM能力优化
+```
 
-- **通用适配**:
-  - 提供baseline格式化
-  - 适用于其他模型
+### 2.3 模板系统 (Template System)
+
+#### 默认模板
+提供开箱即用的标准模板（基于实际最佳实践）：
+
+**Claude XML模板**：
+- 使用语义化XML标签：`<introduction>`, `<rules>`, `<section>`, `<example>`, `<task>`
+- 支持嵌套的`<rule>`结构
+- 清晰的层级关系
+
+**GPT Markdown模板**：
+- 使用Markdown标题和列表
+- 层次结构：`# Role`, `## Rules`, `## Examples`, `## Task`
+- 适合GPT系列模型的格式偏好
+
+**JSON模板**：
+- 结构化的键值对
+- 适合需要严格schema的场景
+
+#### 自定义模板
+用户可以提供自己的模板定义：
+
+```typescript
+interface CustomTemplate {
+  base?: string;              // 基础结构
+  introduction?: string;      // 角色介绍部分的模板
+  rules_section?: string;     // 规则section模板
+  rule_item?: string;         // 单条规则的模板
+  examples_section?: string;  // 示例section模板
+  output_section?: string;    // 输出格式section模板
+  task_section?: string;      // 任务section模板
+}
+```
+
+#### 模板应用流程
+```
+Raw Prompt → Analyzer → Detected Sections
+                              ↓
+                        Template Engine
+                              ↓
+                    Apply Template (默认或自定义)
+                              ↓
+                      Formatted Prompt
+```
 
 ## 3. 可扩展功能
 
@@ -112,39 +183,41 @@ prompt-formatter-mcp/
 │   ├── server.ts                # 服务器核心逻辑
 │   ├── types/                   # TypeScript类型定义
 │   │   ├── index.ts
-│   │   ├── prompt.ts
-│   │   └── format.ts
-│   ├── formatters/              # 格式化器模块
+│   │   ├── prompt.ts            # Prompt相关类型
+│   │   ├── template.ts          # 模板相关类型
+│   │   └── analysis.ts          # 分析结果类型
+│   ├── analyzer/                # 内容分析器（规则引擎）
 │   │   ├── index.ts
-│   │   ├── base.ts              # 基础格式化器抽象类
-│   │   ├── markdown.ts          # Markdown格式化器
-│   │   ├── xml.ts               # XML格式化器
-│   │   ├── json.ts              # JSON格式化器
-│   │   └── yaml.ts              # YAML格式化器
-│   ├── optimizers/              # 优化器模块
+│   │   ├── patterns.ts          # 正则规则和关键词定义
+│   │   ├── section-detector.ts  # Section检测器
+│   │   ├── content-analyzer.ts  # 内容分析器主类
+│   │   └── quality-evaluator.ts # 质量评估器
+│   ├── templates/               # 模板系统
 │   │   ├── index.ts
-│   │   ├── analyzer.ts          # 内容分析器
-│   │   ├── restructurer.ts      # 结构重组器
-│   │   └── enhancer.ts          # 内容增强器
-│   ├── adapters/                # 模型适配器
+│   │   ├── claude-xml.ts        # Claude XML模板
+│   │   ├── gpt-markdown.ts      # GPT Markdown模板
+│   │   ├── json-template.ts     # JSON模板
+│   │   ├── custom-template.ts   # 自定义模板处理
+│   │   └── template-engine.ts   # 模板渲染引擎
+│   ├── formatters/              # 格式化器（应用模板）
 │   │   ├── index.ts
-│   │   ├── base.ts              # 基础适配器
-│   │   ├── claude.ts            # Claude适配器
-│   │   ├── gpt.ts               # GPT适配器
-│   │   └── generic.ts           # 通用适配器
+│   │   ├── base-formatter.ts    # 基础格式化器
+│   │   └── template-formatter.ts # 基于模板的格式化器
+│   ├── validators/              # 验证器
+│   │   ├── index.ts
+│   │   ├── convention-validator.ts  # 规范验证器
+│   │   └── schema-validator.ts      # Schema验证器
 │   ├── tools/                   # MCP工具定义
 │   │   ├── index.ts
-│   │   ├── format.ts            # format工具
-│   │   ├── optimize.ts          # optimize工具
-│   │   └── adapt.ts             # adapt工具
-│   ├── resources/               # MCP资源（未来扩展）
-│   │   └── index.ts
-│   ├── prompts/                 # MCP提示（模板，未来扩展）
+│   │   ├── format-prompt.ts     # format_prompt工具
+│   │   ├── analyze-prompt.ts    # analyze_prompt工具
+│   │   └── validate-prompt.ts   # validate_prompt工具
+│   ├── resources/               # MCP资源（Phase 2）
 │   │   └── index.ts
 │   └── utils/                   # 工具函数
 │       ├── logger.ts
-│       ├── validator.ts
-│       └── parser.ts
+│       ├── text-utils.ts        # 文本处理工具
+│       └── score-calculator.ts  # 评分计算
 ├── tests/                       # 测试文件
 │   ├── formatters/
 │   ├── optimizers/
@@ -164,30 +237,91 @@ prompt-formatter-mcp/
 
 ### 5.2 核心类设计
 
-#### BaseFormatter (抽象基类)
+#### ContentAnalyzer (内容分析器)
 ```typescript
-abstract class BaseFormatter {
-  abstract format(prompt: PromptInput): Promise<FormattedPrompt>;
-  protected abstract validate(prompt: PromptInput): boolean;
-  protected parsePrompt(raw: string): ParsedPrompt;
+class ContentAnalyzer {
+  private sectionDetector: SectionDetector;
+  private qualityEvaluator: QualityEvaluator;
+
+  // 分析prompt结构
+  analyze(prompt: string): AnalysisResult {
+    const sections = this.sectionDetector.detect(prompt);
+    const quality = this.qualityEvaluator.evaluate(sections);
+    const suggestions = this.generateSuggestions(sections, quality);
+
+    return { sections, quality, suggestions };
+  }
 }
 ```
 
-#### BaseAdapter (适配器基类)
+#### SectionDetector (Section检测器)
 ```typescript
-abstract class BaseAdapter {
-  protected formatter: BaseFormatter;
-  abstract adapt(prompt: PromptInput): Promise<AdaptedPrompt>;
-  protected getOptimalFormat(): FormatType;
+class SectionDetector {
+  private patterns: DetectionPatterns;
+
+  // 检测各个section
+  detect(prompt: string): DetectedSections {
+    return {
+      introduction: this.detectIntroduction(prompt),
+      rules: this.detectRules(prompt),
+      context: this.detectContext(prompt),
+      examples: this.detectExamples(prompt),
+      outputFormat: this.detectOutputFormat(prompt),
+      task: this.detectTask(prompt)
+    };
+  }
+
+  // 使用正则和关键词检测特定section
+  private detectIntroduction(text: string): string | null;
+  private detectRules(text: string): string[];
+  // ...
 }
 ```
 
-#### Optimizer (优化器)
+#### TemplateEngine (模板渲染引擎)
 ```typescript
-class PromptOptimizer {
-  analyze(prompt: string): PromptStructure;
-  restructure(structure: PromptStructure): RestructuredPrompt;
-  enhance(prompt: RestructuredPrompt): EnhancedPrompt;
+class TemplateEngine {
+  // 应用模板到检测到的sections
+  render(
+    template: Template,
+    sections: DetectedSections,
+    options?: RenderOptions
+  ): string {
+    let result = '';
+
+    if (sections.introduction && template.introduction) {
+      result += this.renderSection(template.introduction, sections.introduction);
+    }
+
+    if (sections.rules.length > 0 && template.rules_section) {
+      result += this.renderRules(template, sections.rules);
+    }
+
+    // ...
+
+    return result;
+  }
+}
+```
+
+#### ConventionValidator (规范验证器)
+```typescript
+class ConventionValidator {
+  // 验证prompt是否遵循编写规范
+  validate(prompt: string): ValidationResult {
+    const checks = [
+      this.checkRoleDefinition(prompt),
+      this.checkRuleMarkers(prompt),
+      this.checkExampleMarkers(prompt),
+      this.checkSectionSeparation(prompt),
+      this.checkOutputFormat(prompt)
+    ];
+
+    const score = this.calculateScore(checks);
+    const recommendations = this.generateRecommendations(checks);
+
+    return { checks, score, recommendations };
+  }
 }
 ```
 
@@ -195,48 +329,52 @@ class PromptOptimizer {
 
 ### 6.1 Tools（工具）
 
-#### Tool 1: format
-格式化prompt到指定格式
+#### Tool 1: format_prompt
+**核心功能**：使用规则引擎格式化prompt到指定格式
+
 ```typescript
 {
-  name: "format",
-  description: "Format a prompt into a specific structure (markdown, xml, json, yaml)",
+  name: "format_prompt",
+  description: "Format a raw prompt into a structured format (XML for Claude, Markdown for GPT, or custom template)",
   inputSchema: {
     type: "object",
     properties: {
-      prompt: { type: "string", description: "The raw prompt text" },
-      format: {
+      prompt: {
         type: "string",
-        enum: ["markdown", "xml", "json", "yaml"],
-        description: "Target format"
+        description: "The raw prompt text to format"
+      },
+      targetFormat: {
+        type: "string",
+        enum: ["claude_xml", "gpt_markdown", "json", "custom"],
+        description: "Target format template",
+        default: "claude_xml"
+      },
+      customTemplate: {
+        type: "object",
+        description: "Custom template definition (only when targetFormat is 'custom')",
+        properties: {
+          introduction: { type: "string" },
+          rules_section: { type: "string" },
+          rule_item: { type: "string" },
+          examples_section: { type: "string" },
+          output_section: { type: "string" },
+          task_section: { type: "string" }
+        }
       },
       options: {
         type: "object",
         properties: {
-          includeMetadata: { type: "boolean" },
-          preserveWhitespace: { type: "boolean" }
+          preserveWhitespace: {
+            type: "boolean",
+            default: false,
+            description: "Preserve original whitespace"
+          },
+          strictMode: {
+            type: "boolean",
+            default: false,
+            description: "Fail if cannot detect required sections"
+          }
         }
-      }
-    },
-    required: ["prompt", "format"]
-  }
-}
-```
-
-#### Tool 2: optimize
-优化prompt结构和内容
-```typescript
-{
-  name: "optimize",
-  description: "Analyze and optimize prompt structure for better clarity",
-  inputSchema: {
-    type: "object",
-    properties: {
-      prompt: { type: "string", description: "The prompt to optimize" },
-      level: {
-        type: "string",
-        enum: ["basic", "standard", "advanced"],
-        description: "Optimization level"
       }
     },
     required: ["prompt"]
@@ -244,29 +382,131 @@ class PromptOptimizer {
 }
 ```
 
-#### Tool 3: adapt
-针对特定模型适配prompt
+**返回示例**：
+```json
+{
+  "formatted_prompt": "<introduction>You are a translator...</introduction><rules>...",
+  "detected_sections": {
+    "introduction": true,
+    "rules": 5,
+    "examples": 2,
+    "output_format": true,
+    "task": true
+  },
+  "confidence_score": 0.85,
+  "warnings": ["No examples detected - consider adding examples for clarity"]
+}
+```
+
+#### Tool 2: analyze_prompt
+**核心功能**：分析prompt结构，返回诊断信息给Agent优化
+
 ```typescript
 {
-  name: "adapt",
-  description: "Adapt a prompt for a specific LLM model",
+  name: "analyze_prompt",
+  description: "Analyze prompt structure and quality, return suggestions for Agent to optimize",
   inputSchema: {
     type: "object",
     properties: {
-      prompt: { type: "string", description: "The prompt to adapt" },
+      prompt: {
+        type: "string",
+        description: "The prompt to analyze"
+      },
       targetModel: {
         type: "string",
         enum: ["claude", "gpt", "generic"],
-        description: "Target LLM model"
-      },
-      optimizationLevel: {
-        type: "string",
-        enum: ["basic", "standard", "advanced"],
-        default: "standard"
+        description: "Target LLM model for optimization suggestions",
+        default: "generic"
       }
     },
-    required: ["prompt", "targetModel"]
+    required: ["prompt"]
   }
+}
+```
+
+**返回示例**：
+```json
+{
+  "analysis": {
+    "detected_sections": {
+      "introduction": "You are a translator",
+      "rules": ["Rule 1", "Rule 2"],
+      "context": null,
+      "examples": [],
+      "output_format": "Use <result> tags",
+      "task": "Translate the text below"
+    },
+    "quality_metrics": {
+      "clarity_score": 0.7,
+      "completeness_score": 0.6,
+      "structure_score": 0.8
+    },
+    "missing_sections": ["context", "examples"],
+    "issues": [
+      {
+        "type": "missing_content",
+        "severity": "medium",
+        "section": "examples",
+        "description": "No examples provided - may reduce model performance"
+      }
+    ]
+  },
+  "suggestions": [
+    "Add 1-2 examples to illustrate the expected translation style",
+    "Consider adding context about the domain (e.g., technical, casual)",
+    "The task section is clear and well-defined"
+  ],
+  "optimization_prompt": "To improve this prompt for Claude:\n1. Add context about the translation domain\n2. Include 2-3 examples showing input/output pairs\n3. Consider adding more specific rules about tone and style"
+}
+```
+
+#### Tool 3: validate_prompt
+**核心功能**：验证prompt是否遵循编写规范
+
+```typescript
+{
+  name: "validate_prompt",
+  description: "Validate if a prompt follows the recommended conventions (see CONVENTIONS.md)",
+  inputSchema: {
+    type: "object",
+    properties: {
+      prompt: {
+        type: "string",
+        description: "The prompt to validate"
+      }
+    },
+    required: ["prompt"]
+  }
+}
+```
+
+**返回示例**：
+```json
+{
+  "is_valid": false,
+  "compliance_score": 0.65,
+  "checks": [
+    {
+      "check": "Has clear role definition",
+      "passed": true,
+      "found": "You are a translator"
+    },
+    {
+      "check": "Rules use standard markers",
+      "passed": false,
+      "suggestion": "Use 'Rule:', 'Must', 'Always' keywords for better recognition"
+    },
+    {
+      "check": "Examples are marked clearly",
+      "passed": false,
+      "suggestion": "Use 'Example:' or 'For example,' to mark examples"
+    }
+  ],
+  "recommendations": [
+    "Add 'Rule:' prefix to each rule for better detection",
+    "Mark examples explicitly with 'Example:' keyword",
+    "Add blank lines between different sections"
+  ]
 }
 ```
 
@@ -292,44 +532,73 @@ class PromptOptimizer {
 ## 7. 实现计划
 
 ### Phase 1: 核心功能（MVP）
-**目标**: 实现基本的格式化和适配功能
+**目标**: 实现基于规则的格式化和分析功能
 
+#### 阶段1.1: 项目基础（第1周）
 1. **项目初始化**
    - 设置TypeScript + Node.js环境
-   - 配置MCP SDK
-   - 建立项目结构
+   - 配置MCP SDK (@modelcontextprotocol/sdk)
+   - 建立目录结构
+   - 配置测试框架（Vitest）
+   - 设置ESLint + Prettier
 
-2. **实现核心模块**
-   - BaseFormatter抽象类
-   - MarkdownFormatter
-   - XMLFormatter
-   - 基本的PromptOptimizer
+2. **类型定义**
+   - 定义核心类型（types/）
+   - DetectedSections, AnalysisResult, Template等
 
-3. **实现适配器**
-   - ClaudeAdapter
-   - GPTAdapter
-   - GenericAdapter
+#### 阶段1.2: 规则引擎（第2周）
+3. **实现内容分析器**
+   - patterns.ts - 定义正则规则和关键词
+   - section-detector.ts - 实现section检测逻辑
+   - content-analyzer.ts - 主分析类
+   - quality-evaluator.ts - 质量评估器
 
-4. **MCP工具实现**
-   - format工具
-   - adapt工具
+4. **单元测试**
+   - 测试各种prompt格式的识别准确率
+   - 边界情况测试
 
-5. **测试和文档**
-   - 单元测试
+#### 阶段1.3: 模板系统（第3周）
+5. **实现默认模板**
+   - claude-xml.ts - Claude XML模板
+   - gpt-markdown.ts - GPT Markdown模板
+   - template-engine.ts - 渲染引擎
+
+6. **自定义模板支持**
+   - custom-template.ts - 自定义模板处理
+
+#### 阶段1.4: MCP工具集成（第4周）
+7. **实现MCP工具**
+   - format-prompt.ts - format_prompt工具
+   - analyze-prompt.ts - analyze_prompt工具
+   - validate-prompt.ts - validate_prompt工具
+
+8. **集成到MCP Server**
+   - server.ts - MCP服务器核心
+   - 工具注册和请求处理
+
+#### 阶段1.5: 测试和文档（第5周）
+9. **完善测试**
+   - 端到端测试
    - 集成测试
-   - API文档
-   - 使用示例
+   - 示例测试
 
-### Phase 2: 扩展功能
-- JSON/YAML格式化器
-- optimize工具
-- 模板库（Resources）
-- Prompt验证器
+10. **文档编写**
+    - API文档（docs/API.md）
+    - 使用指南（docs/USAGE.md）
+    - 示例（examples/）
 
-### Phase 3: 高级功能
+### Phase 2: 扩展功能（第6-8周）
+- JSON模板完善
+- 更多模型适配（Gemini, etc.）
+- 模板库Resources实现
+- 批量格式化支持
+- 性能优化
+
+### Phase 3: 高级功能（第9-12周）
 - 学习和反馈系统
-- 批量处理
-- 性能分析
+- 性能分析工具
+- Web界面（可选）
+- VSCode插件（可选）
 
 ## 8. 质量保证
 
