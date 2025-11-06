@@ -41,8 +41,6 @@ export function validateCustomTemplate(custom: CustomTemplate): {
   const errors: string[] = [];
 
   // Check for required placeholders
-  const requiredPlaceholders = ['{{content}}'];
-
   const checkPlaceholder = (field: string | undefined, fieldName: string) => {
     if (field && !field.includes('{{content}}')) {
       errors.push(

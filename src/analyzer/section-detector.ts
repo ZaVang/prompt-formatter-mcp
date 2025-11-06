@@ -6,7 +6,6 @@ import {
 import {
   detectionPatterns,
   extractMatches,
-  matchesPattern,
 } from './patterns.js';
 
 /**

@@ -174,7 +174,7 @@ export class TemplateEngine {
   private renderRules(
     template: Template,
     rules: string[],
-    options: RenderOptions
+    _options: RenderOptions
   ): string {
     if (rules.length === 0) return '';
 
@@ -202,7 +202,7 @@ export class TemplateEngine {
   private renderExamples(
     template: Template,
     examples: Array<{ content: string; input?: string; output?: string }>,
-    options: RenderOptions
+    _options: RenderOptions
   ): string {
     if (examples.length === 0) return '';
 
@@ -256,13 +256,13 @@ export class TemplateEngine {
 
     // Handle {{#if input}} ... {{/if}}
     const ifInputRegex = /\{\{#if input\}\}([\s\S]*?)\{\{\/if\}\}/g;
-    result = result.replace(ifInputRegex, (match, content) => {
+    result = result.replace(ifInputRegex, (_match, content) => {
       return data.input ? content : '';
     });
 
     // Handle {{#if output}} ... {{/if}}
     const ifOutputRegex = /\{\{#if output\}\}([\s\S]*?)\{\{\/if\}\}/g;
-    result = result.replace(ifOutputRegex, (match, content) => {
+    result = result.replace(ifOutputRegex, (_match, content) => {
       return data.output ? content : '';
     });
 
