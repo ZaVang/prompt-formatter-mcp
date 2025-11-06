@@ -70,6 +70,8 @@ npx @modelcontextprotocol/inspector node dist/index.js
 
 ### 方法3：与Claude Desktop集成
 
+**重要**: 确保使用最新的构建版本（已修复日志bug）
+
 1. 编辑Claude Desktop配置：
 ```json
 {
@@ -77,6 +79,21 @@ npx @modelcontextprotocol/inspector node dist/index.js
     "prompt-formatter": {
       "command": "node",
       "args": ["/绝对路径/to/prompt-formatter-mcp/dist/index.js"]
+    }
+  }
+}
+```
+
+**如果需要调试日志**，添加环境变量：
+```json
+{
+  "mcpServers": {
+    "prompt-formatter": {
+      "command": "node",
+      "args": ["/绝对路径/to/prompt-formatter-mcp/dist/index.js"],
+      "env": {
+        "LOG_LEVEL": "2"
+      }
     }
   }
 }
@@ -162,3 +179,54 @@ npm run test:quick
 ```
 
 搞定！🎉
+
+## 🔍 调试和日志
+
+### 默认行为（生产模式）
+
+默认情况下，服务器**不输出详细日志**，只显示错误。这是为了：
+- ✅ 确保MCP通信不被污染
+- ✅ 避免性能影响
+- ✅ 符合MCP最佳实践
+
+### 启用调试日志
+
+**日志级别**：
+- `0` - ERROR：只显示错误（默认）
+- `1` - WARN：显示警告
+- `2` - INFO：显示信息（推荐调试用）
+- `3` - DEBUG：显示所有日志
+
+**本地测试时启用日志**：
+```bash
+LOG_LEVEL=2 npm run test:quick
+```
+
+**Claude Desktop中启用日志**：
+在配置中添加`env`：
+```json
+{
+  "mcpServers": {
+    "prompt-formatter": {
+      "command": "node",
+      "args": ["/path/to/dist/index.js"],
+      "env": {
+        "LOG_LEVEL": "2"
+      }
+    }
+  }
+}
+```
+
+**查看Claude Desktop日志**：
+- macOS: `~/Library/Logs/Claude/`
+- Windows: `%APPDATA%\Claude\logs\`
+
+### 重要提示
+
+⚠️ **不要修改logger输出到stdout**！这会破坏MCP通信。
+
+如果遇到 `Unexpected token 'I', "[INFO]..." is not valid JSON` 错误，说明日志污染了JSON消息流。解决方法：
+1. 确保使用最新构建版本
+2. 检查logger是否输出到stderr（`console.error`）
+3. 参考 [LOGGING_FIX.md](./LOGGING_FIX.md)
