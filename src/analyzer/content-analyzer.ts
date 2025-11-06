@@ -1,16 +1,23 @@
 import { AnalysisResult } from '../types/index.js';
 import { SectionDetector } from './section-detector.js';
+import { EnhancedSectionDetector } from './enhanced-section-detector.js';
 import { QualityEvaluator } from './quality-evaluator.js';
 
 /**
  * ContentAnalyzer - Main analyzer class that coordinates section detection and quality evaluation
+ *
+ * Supports both basic and enhanced detection:
+ * - Basic: Original English-only pattern matching
+ * - Enhanced: Multilingual patterns + heuristic fallback (default)
  */
 export class ContentAnalyzer {
-  private sectionDetector: SectionDetector;
+  private sectionDetector: SectionDetector | EnhancedSectionDetector;
   private qualityEvaluator: QualityEvaluator;
 
-  constructor() {
-    this.sectionDetector = new SectionDetector();
+  constructor(useEnhanced: boolean = true) {
+    this.sectionDetector = useEnhanced
+      ? new EnhancedSectionDetector()
+      : new SectionDetector();
     this.qualityEvaluator = new QualityEvaluator();
   }
 

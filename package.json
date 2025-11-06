@@ -13,6 +13,7 @@
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "test:quick": "node scripts/test-simple.js",
+    "test:enhanced": "node scripts/test-enhanced.js",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
