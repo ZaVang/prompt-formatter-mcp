@@ -43,6 +43,7 @@ export type TemplateType = 'claude_xml' | 'gpt_markdown' | 'json' | 'custom';
  */
 export interface RenderOptions {
   includeEmptySections?: boolean;
+  preserveWhitespace?: boolean;
   indentation?: string;
   lineBreak?: string;
   customVariables?: Record<string, string>;

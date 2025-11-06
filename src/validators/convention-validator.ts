@@ -1,14 +1,11 @@
 import { ValidationResult, ValidationCheck } from '../types/index.js';
-import { ContentAnalyzer } from '../analyzer/index.js';
 
 /**
  * ConventionValidator - Validates if a prompt follows the recommended conventions
  */
 export class ConventionValidator {
-  private analyzer: ContentAnalyzer;
-
   constructor() {
-    this.analyzer = new ContentAnalyzer();
+    // Validation is performed through pattern matching, no analyzer needed
   }
 
   /**
