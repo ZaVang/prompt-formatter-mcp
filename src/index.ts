@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'url';
+import { resolve } from 'path';
 import { PromptFormatterServer } from './server.js';
 import { logger } from './utils/logger.js';
 
@@ -23,6 +25,15 @@ async function main() {
 }
 
 // Only run server if this is the main module
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
+// More reliable check that works with npx
+const currentFilePath = fileURLToPath(import.meta.url);
+const isMainModule = process.argv[1] &&
+  (currentFilePath === resolve(process.argv[1]) ||
+   currentFilePath === process.argv[1]);
+
+if (isMainModule) {
+  main().catch((error) => {
+    logger.error('Fatal error:', error);
+    process.exit(1);
+  });
 }
