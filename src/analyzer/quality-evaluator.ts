@@ -146,7 +146,9 @@ export class QualityEvaluator {
       (criteria.structureIsOrganized ? 0.4 : 0) +
       (criteria.hasIntroduction ? 0.2 : 0) +
       (criteria.hasTask ? 0.2 : 0) +
-      (sections.rules.length > 0 ? Math.min(sections.rules.length * 0.05, 0.2) : 0);
+      (sections.rules.length > 0
+        ? Math.min(sections.rules.length * 0.05, 0.2)
+        : 0);
 
     // Overall score: weighted average
     const overallScore =

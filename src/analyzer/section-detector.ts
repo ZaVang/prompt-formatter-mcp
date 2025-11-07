@@ -3,10 +3,7 @@ import {
   SectionDetectionResult,
   PatternMatch,
 } from '../types/index.js';
-import {
-  detectionPatterns,
-  extractMatches,
-} from './patterns.js';
+import { detectionPatterns, extractMatches } from './patterns.js';
 
 /**
  * SectionDetector - Detects different sections in a prompt using pattern matching

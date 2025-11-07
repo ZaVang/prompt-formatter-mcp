@@ -21,14 +21,16 @@ export class FormatPromptTool {
    */
   async format(
     prompt: string,
-    targetFormat: 'claude_xml' | 'gpt_markdown' | 'json' | 'custom' = 'claude_xml',
+    targetFormat:
+      | 'claude_xml'
+      | 'gpt_markdown'
+      | 'json'
+      | 'custom' = 'claude_xml',
     customTemplate?: CustomTemplate,
     options?: FormatOptions
   ): Promise<FormatResult> {
     try {
-      logger.info(
-        `Formatting prompt with target format: ${targetFormat}`
-      );
+      logger.info(`Formatting prompt with target format: ${targetFormat}`);
 
       // Analyze the prompt to detect sections
       const analysis = this.analyzer.analyze(prompt);

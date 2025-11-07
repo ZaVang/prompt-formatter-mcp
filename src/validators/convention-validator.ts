@@ -165,7 +165,8 @@ export class ConventionValidator {
     return {
       check: 'Uses blank lines to separate sections',
       passed: false,
-      suggestion: 'Add blank lines between different sections for better readability',
+      suggestion:
+        'Add blank lines between different sections for better readability',
     };
   }
 

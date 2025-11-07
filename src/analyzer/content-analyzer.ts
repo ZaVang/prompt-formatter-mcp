@@ -24,7 +24,10 @@ export class ContentAnalyzer {
   /**
    * Analyze a prompt and return comprehensive analysis results
    */
-  analyze(prompt: string, targetModel?: 'claude' | 'gpt' | 'generic'): AnalysisResult {
+  analyze(
+    prompt: string,
+    targetModel?: 'claude' | 'gpt' | 'generic'
+  ): AnalysisResult {
     // Detect sections
     const sections = this.sectionDetector.detect(prompt);
 
@@ -99,8 +102,7 @@ export class ContentAnalyzer {
             prompt += `- Add clear rules and constraints\n`;
             break;
           case 'context':
-            prompt +=
-              '- Add background context if relevant to the task\n';
+            prompt += '- Add background context if relevant to the task\n';
             break;
           case 'examples':
             prompt += `- Add 1-2 examples showing expected input/output\n`;
@@ -118,7 +120,8 @@ export class ContentAnalyzer {
 
     // Add quality-based suggestions
     if (quality.clarityScore < 0.7) {
-      prompt += '- Improve clarity by using standard markers (Rule:, Example:, etc.)\n';
+      prompt +=
+        '- Improve clarity by using standard markers (Rule:, Example:, etc.)\n';
     }
     if (quality.structureScore < 0.7) {
       prompt +=
@@ -167,7 +170,9 @@ export class ContentAnalyzer {
       if (hasStandardMarkers) {
         passedChecks.push('Rules use standard markers');
       } else {
-        failedChecks.push('Rules could use standard markers (Rule:, Must, etc.)');
+        failedChecks.push(
+          'Rules could use standard markers (Rule:, Must, etc.)'
+        );
       }
     }
 
@@ -195,7 +200,8 @@ export class ContentAnalyzer {
       failedChecks.push('Missing clear task instruction');
     }
 
-    const score = passedChecks.length / (passedChecks.length + failedChecks.length);
+    const score =
+      passedChecks.length / (passedChecks.length + failedChecks.length);
 
     return {
       score,

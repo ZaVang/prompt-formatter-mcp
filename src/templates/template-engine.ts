@@ -232,7 +232,10 @@ export class TemplateEngine {
       }
 
       // Support {{index}} placeholder
-      renderedExample = renderedExample.replace(/\{\{index\}\}/g, String(i + 1));
+      renderedExample = renderedExample.replace(
+        /\{\{index\}\}/g,
+        String(i + 1)
+      );
 
       // Handle conditional blocks (simple implementation)
       renderedExample = this.handleConditionals(renderedExample, example);

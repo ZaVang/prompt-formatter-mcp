@@ -3,9 +3,7 @@ import {
   SectionDetectionResult,
   PatternMatch,
 } from '../types/index.js';
-import {
-  enhancedDetectionPatterns,
-} from './enhanced-patterns.js';
+import { enhancedDetectionPatterns } from './enhanced-patterns.js';
 import { extractMatches } from './patterns.js';
 import { HeuristicSegmenter } from './heuristic-segmenter.js';
 
@@ -304,7 +302,9 @@ export class EnhancedSectionDetector {
         );
         for (const match of exampleMatches) {
           const content = match[1].trim();
-          const inputMatch = content.match(/input[:：]\s*(.+?)(?:\n|output[:：])/i);
+          const inputMatch = content.match(
+            /input[:：]\s*(.+?)(?:\n|output[:：])/i
+          );
           const outputMatch = content.match(/output[:：]\s*(.+?)(?:\n|$)/i);
 
           examples.push({

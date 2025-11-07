@@ -55,7 +55,5 @@ class Logger {
 // Default to ERROR level to avoid polluting stdout
 // Set LOG_LEVEL=2 for INFO, LOG_LEVEL=3 for DEBUG
 export const logger = new Logger(
-  process.env.LOG_LEVEL
-    ? parseInt(process.env.LOG_LEVEL)
-    : LogLevel.ERROR  // Changed from INFO to ERROR
+  process.env.LOG_LEVEL ? parseInt(process.env.LOG_LEVEL) : LogLevel.ERROR // Changed from INFO to ERROR
 );
