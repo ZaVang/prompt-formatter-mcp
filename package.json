@@ -3,10 +3,19 @@
   "version": "0.1.0",
   "description": "MCP server for intelligently formatting and optimizing prompts using rule-based analysis and structured templates",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "bin": {
     "prompt-formatter-mcp": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -31,8 +40,19 @@
     "gpt",
     "prompt-engineering"
   ],
-  "author": "",
+  "author": "ZaVang",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZaVang/prompt-formatter-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ZaVang/prompt-formatter-mcp/issues"
+  },
+  "homepage": "https://github.com/ZaVang/prompt-formatter-mcp#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4"
   },
